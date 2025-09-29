@@ -3,14 +3,24 @@ using UnityEngine.InputSystem;
 
 public class Movement : MonoBehaviour
 {
-    [SerializeField] InputAction thrust;
-    [SerializeField] InputAction rotation;
-    [SerializeField] private float _forceValue = 100.0f;
-    [SerializeField] private float _rotationStrength = 20.0f;
+    [Header("Input Actions")]
+    [SerializeField] private InputAction thrust;
+    [SerializeField] private InputAction rotation;
 
+    [Header("Movement Settings")]
+    [SerializeField] private float forceValue = 100f;
+    [SerializeField] private float rotationStrength = 20f;
 
-    private AudioSource _audiosource;
-    private Rigidbody _rb;
+    [Header("Audio")]
+    [SerializeField] private AudioClip mainEngineClip;
+    private AudioSource engineSFXSource;
+
+    [Header("Particles")]
+    [SerializeField] private ParticleSystem mainEngineParticle;
+    [SerializeField] private ParticleSystem rightEngineParticle;
+    [SerializeField] private ParticleSystem leftEngineParticle;
+
+    private Rigidbody rb;
 
     private void OnEnable()
     {
@@ -18,16 +28,14 @@ public class Movement : MonoBehaviour
         rotation.Enable();
     }
 
-    void Start()
+    private void Start()
     {
-        _rb = GetComponent<Rigidbody>();
-        _audiosource = GetComponent<AudioSource>();
-    }
+        rb = GetComponent<Rigidbody>();
+        engineSFXSource = GetComponent<AudioSource>();
 
-    // Update is called once per frame
-    void Update()
-    {
-        
+        mainEngineParticle?.Stop();
+        rightEngineParticle?.Stop();
+        leftEngineParticle?.Stop();
     }
 
     private void FixedUpdate()
@@ -40,34 +48,61 @@ public class Movement : MonoBehaviour
     {
         if (thrust.IsPressed())
         {
-            if (_rb != null)
-            {
-                _rb.AddRelativeForce(Vector3.up * _forceValue * Time.fixedDeltaTime, ForceMode.Impulse);
+            rb.AddRelativeForce(Vector3.up * forceValue * Time.fixedDeltaTime, ForceMode.Impulse);
 
-                if (_audiosource != null) 
-                {
-                    if(!_audiosource.isPlaying)
-                    {
-                        _audiosource.Play();
-                        AudioFader.Instance.Fade(_audiosource, 1f, Time.deltaTime/2);
-                    }
-                }
+            if (!engineSFXSource.isPlaying)
+            {
+                engineSFXSource.PlayOneShot(mainEngineClip);
+                AudioFader.Instance.Fade(engineSFXSource, 1f, Time.deltaTime);
             }
+
+            mainEngineParticle?.Play();
         }
-        else if(_audiosource != null && _audiosource.isPlaying) 
+        else
         {
-            AudioFader.Instance.Fade(_audiosource, 0f, 0.3f);
-            //_audiosource.Stop();
+            if (engineSFXSource.isPlaying)
+            {
+                AudioFader.Instance.Fade(engineSFXSource, 0f, 0.3f);
+                engineSFXSource.Stop();
+            }
+
+            mainEngineParticle?.Stop();
         }
     }
-    
 
     private void ProcessRotation()
     {
-        _rb.freezeRotation = true;
-        float rotationInputValue = rotation.ReadValue<float>() * Mathf.PI * Time.fixedDeltaTime * _rotationStrength;
-        // Debug.Log(rotationInputValue);
-        this.transform.Rotate(Vector3.forward, rotationInputValue);
-        _rb.freezeRotation = false;
+        rb.freezeRotation = true;
+
+        float rotationInput = rotation.ReadValue<float>() * Mathf.PI * Time.fixedDeltaTime * rotationStrength;
+        transform.Rotate(Vector3.forward, rotationInput);
+
+        if (rotationInput > 0f)
+        {
+            rightEngineParticle?.Play();
+            leftEngineParticle?.Stop();
+        }
+        else if (rotationInput < 0f)
+        {
+            leftEngineParticle?.Play();
+            rightEngineParticle?.Stop();
+        }
+        else
+        {
+            rightEngineParticle?.Stop();
+            leftEngineParticle?.Stop();
+        }
+
+        rb.freezeRotation = false;
+    }
+
+    public void DisableMovement()
+    {
+        engineSFXSource.Stop();
+        mainEngineParticle?.Stop();
+        leftEngineParticle?.Stop();
+        rightEngineParticle?.Stop();
+
+        enabled = false;
     }
 }

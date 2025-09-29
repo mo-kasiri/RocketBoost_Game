@@ -25,24 +25,25 @@ public class AudioFader : MonoBehaviour
     /// </summary>
     public void Fade(AudioSource source, float targetVolume, float duration)
     {
-        StartCoroutine(FadeAudio(source, targetVolume, duration));
+        StartCoroutine(FadeVolume(source, targetVolume, duration));
     }
 
-    private IEnumerator FadeAudio(AudioSource source, float targetVolume, float duration)
+    private IEnumerator FadeVolume(AudioSource source, float targetVolume, float duration)
     {
         float startVolume = source.volume;
         float time = 0f;
 
-        if (source != null)
+        if(source != null)
         {
             while (time < duration)
             {
                 time += Time.deltaTime;
-                source.volume = Mathf.Lerp(startVolume, targetVolume, time / duration);
+                if (source != null)
+                    source.volume = Mathf.Lerp(startVolume, targetVolume, time / duration);
                 yield return null;
             }
 
-            if (targetVolume <= 0f)
+            if (targetVolume <= 0f && source != null)
                 source.Stop();
         }
     }
