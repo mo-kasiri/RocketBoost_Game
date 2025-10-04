@@ -1,14 +1,13 @@
 ﻿using UnityEngine;
 using UnityEngine.SceneManagement;
 using Unity.Cinemachine;
+using UnityEngine.InputSystem;
 
 public class CollisionHandler : MonoBehaviour
 {
     private int _sceneCount;
     private Movement _movement;
-    //private AudioSource _sfxSource;
     private AudioSource _sfxSource;
-    private MeshRenderer _meshRenderer;
     private Collider _collider;
 
     [Header("Cine Machine Camera")]
@@ -28,7 +27,6 @@ public class CollisionHandler : MonoBehaviour
     [SerializeField] private ParticleSystem _crashParticles;
     [SerializeField] private ParticleSystem _mainEngineParticles;
 
-
     private void Awake()
     {
         _sceneCount = SceneManager.sceneCountInBuildSettings;
@@ -37,9 +35,13 @@ public class CollisionHandler : MonoBehaviour
     private void Start()
     {
         _collider = GetComponent<Collider>();
-        _meshRenderer = GetComponent<MeshRenderer>();
         _movement = GetComponent<Movement>();
         _sfxSource = GetComponents<AudioSource>()[1];
+    }
+
+    private void Update()
+    {
+        RespondToDebugKeys();
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -123,6 +125,7 @@ public class CollisionHandler : MonoBehaviour
         }
         else
         {
+            Debug.Log(currentScene);
             SceneManager.LoadScene(currentScene + 1);
         }
     }
@@ -163,6 +166,20 @@ public class CollisionHandler : MonoBehaviour
             vcam.Follow = null;
             vcam.LookAt = null;
         }
+        }
+    }
+
+    void RespondToDebugKeys()
+    {
+        if (Keyboard.current.lKey.isPressed)
+        {
+            Debug.Log("Debug: Loading next level");
+            LoadNextLevel();
+        }
+        if (Keyboard.current.cKey.isPressed)
+        {
+            // Toggle collision
+            _collider.enabled = !_collider.enabled;
         }
     }
 }
